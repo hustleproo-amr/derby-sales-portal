@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Derby - DIB Sales Portal</title>
+    <link rel="stylesheet" href="styles.css?v=32" />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"
+    ></script>
+    <script defer src="app.js?v=32"></script>
+  </head>
+  <body>
+    <section id="authScreen" class="auth-screen">
+      <div class="auth-card">
+        <div class="brand-block auth-brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span class="brand-stem"></span>
+            <span class="brand-stem brand-stem-short"></span>
+          </div>
+          <div class="brand-copy">
+            <p class="sidebar-kicker">Derby</p>
+            <h1>DIB Sales Portal</h1>
+          </div>
+        </div>
+
+        <div class="auth-copy">
+          <h2>Secure sales access</h2>
+          <p class="subtle-text">Please contact admin for login access.</p>
+        </div>
+
+        <form id="loginForm" class="auth-form">
+          <label class="field">
+            <span>Username</span>
+            <input name="username" type="text" placeholder="Enter username" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input name="password" type="password" placeholder="Enter password" />
+          </label>
+          <button class="button button-primary" type="submit">Login</button>
+          <p id="loginError" class="auth-error subtle-text"></p>
+        </form>
+      </div>
+    </section>
+
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <div id="appShell" class="page-shell" hidden>
+      <aside id="portalSidebar" class="sidebar">
+        <div class="sidebar-panel">
+          <div class="brand-block">
+            <div class="brand-mark" aria-hidden="true">
+              <span class="brand-stem"></span>
+              <span class="brand-stem brand-stem-short"></span>
+            </div>
+            <div class="brand-copy">
+              <p class="sidebar-kicker">Derby</p>
+              <h1>DIB Sales Portal</h1>
+            </div>
+            <button
+              id="sidebarClose"
+              class="icon-button sidebar-close"
+              type="button"
+              aria-label="Close navigation"
+            >
+              <span></span>
+              <span></span>
+            </button>
+          </div>
+
+          <nav class="sidebar-nav">
+            <button class="nav-button active" data-panel-target="dashboard">
+              <span class="nav-icon">01</span>
+              <span>Dashboard</span>
+            </button>
+            <button class="nav-button" data-panel-target="mis-upload">
+              <span class="nav-icon">02</span>
+              <span>MIS Upload</span>
+            </button>
+            <button class="nav-button" data-panel-target="submissions">
+              <span class="nav-icon">03</span>
+              <span>Submissions</span>
+            </button>
+            <button class="nav-button" data-panel-target="dbr-dsr">
+              <span class="nav-icon">04</span>
+              <span>DBR / DSR Calculator</span>
+            </button>
+            <button class="nav-button" data-panel-target="emi">
+              <span class="nav-icon">05</span>
+              <span>EMI Calculator</span>
+            </button>
+            <button class="nav-button" data-panel-target="proposal">
+              <span class="nav-icon">06</span>
+              <span>Proposal PDF</span>
+            </button>
+            <button class="nav-button" data-panel-target="company-listing">
+              <span class="nav-icon">07</span>
+              <span>Company Listing</span>
+            </button>
+            <button class="nav-button" data-panel-target="follow-up">
+              <span class="nav-icon">08</span>
+              <span>Follow-up Tracker</span>
+            </button>
+          </nav>
+
+          <section class="rule-card">
+            <div class="rule-card-head">
+              <h2>Applied MIS Policy</h2>
+              <span class="status-chip status-chip-end">Live</span>
+            </div>
+            <ul>
+              <li>Submission excludes <code>BOOKED</code>, <code>END</code>, <code>BOOKED -</code>, and <code>CANCEL</code>.</li>
+              <li>Current Month Booked = <code>BOOKED</code> only.</li>
+              <li>Total Booked = <code>END</code> only.</li>
+              <li>Credit card liability = 5% in DSR.</li>
+            </ul>
+          </section>
+
+          <section class="support-card">
+            <p class="support-title">Need help?</p>
+            <p class="support-copy">Monitor MIS activity, calculate eligibility, and prepare proposals from one premium workspace.</p>
+          </section>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="topbar-left">
+            <button
+              id="sidebarToggle"
+              class="icon-button sidebar-toggle"
+              type="button"
+              aria-label="Open navigation"
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+            <div class="title-block">
+              <h2>Derby - DIB Sales Portal</h2>
+              <p>Personal Finance Sales Management System</p>
+            </div>
+          </div>
+
+          <div class="topbar-center">
+            <label class="search-shell" aria-label="Search">
+              <span class="search-icon"></span>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Search by app id, agent, customer, company"
+              />
+            </label>
+          </div>
+
+          <div class="topbar-right">
+            <label class="field field-compact month-field">
+              <span>Analysis Month</span>
+              <select id="monthFilter"></select>
+            </label>
+            <div class="user-chip">
+              <div id="userAvatarText" class="user-avatar">DA</div>
+              <div>
+                <strong id="userDisplayName">Derby Team</strong>
+                <span id="userDisplayRole">Sales Management</span>
+              </div>
+            </div>
+            <button id="logoutButton" class="button button-secondary" type="button">Logout</button>
+          </div>
+        </header>
+
+        <div class="meta-strip">
+          <p id="sourceMeta" class="subtle-text">Using starter sample data.</p>
+        </div>
+
+        <section class="panel active" data-panel="dashboard">
+          <div id="managerDashboardContent">
+          <div class="button-row dashboard-export-row">
+            <button id="exportPdfButton" class="button button-primary" type="button">Export PDF Report</button>
+            <button id="exportExcelButton" class="button button-secondary" type="button">Export Excel Report</button>
+          </div>
+          <p id="dashboardExportStatus" class="subtle-text"></p>
+          <div class="hero card">
+            <div class="hero-copy">
+              <h3>Clean daily control for Derby personal finance sales.</h3>
+              <p class="subtle-text">
+                Track submissions, booked value, pipeline progress, calculators, and proposal readiness in one modern fintech-style workspace.
+              </p>
+            </div>
+            <div class="hero-meta">
+              <span id="activeStaffBadge" class="badge"></span>
+              <span id="activeCasesBadge" class="badge badge-soft"></span>
+            </div>
+          </div>
+
+          <div id="kpiGrid" class="kpi-grid"></div>
+
+          <div class="dashboard-grid">
+            <article class="card span-two">
+              <div class="card-head">
+                <div>
+                  <h3>Agent Performance</h3>
+                  <p class="subtle-text">Grouped by first two names from active staff and MIS records.</p>
+                </div>
+              </div>
+
+              <div class="table-wrap premium-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Agent Name</th>
+                      <th class="number">Current Submission Value</th>
+                      <th class="number">Booked Value (END)</th>
+                      <th class="number">Current Month Booked Value</th>
+                      <th class="number">Booked Cases Count</th>
+                      <th class="number">Conversion %</th>
+                    </tr>
+                  </thead>
+                  <tbody id="agentTableBody"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Active Stages</h3>
+                  <p class="subtle-text">Live view of all submission stages currently in progress.</p>
+                </div>
+              </div>
+              <div id="stageList" class="stage-list"></div>
+            </article>
+          </div>
+
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h3>Agent Leaderboard</h3>
+                <p class="subtle-text">Top performers ranked by total booked value, current month booked, and conversion.</p>
+              </div>
+            </div>
+
+            <div class="table-wrap premium-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Agent Name</th>
+                    <th class="number">Current Submission Value</th>
+                    <th class="number">Total Booked Value (END)</th>
+                    <th class="number">Current Month Booked Value (BOOKED)</th>
+                    <th class="number">Booked Cases Count</th>
+                    <th class="number">Conversion %</th>
+                    <th>Status Badge</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboardBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h3>Pipeline Cases</h3>
+                <p class="subtle-text">Pending sales cases, stage bottlenecks, and urgent follow-up visibility.</p>
+              </div>
+            </div>
+
+            <div id="pipelineKpiGrid" class="pipeline-kpi-grid"></div>
+
+            <div class="table-wrap premium-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Agent Name</th>
+                    <th>Customer Name</th>
+                    <th>Company</th>
+                    <th class="number">Finance Amount</th>
+                    <th>Current Stage</th>
+                    <th class="number">Ageing Days</th>
+                    <th>Follow-up Status</th>
+                  </tr>
+                </thead>
+                <tbody id="pipelineTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+          </div>
+
+          <div id="salesDashboardContent" hidden>
+            <div class="hero card">
+              <div class="hero-copy">
+                <h3>My daily sales view.</h3>
+                <p class="subtle-text">
+                  Track your booked value, open pipeline, urgent follow-ups, and monthly target progress in one focused workspace.
+                </p>
+              </div>
+              <div class="hero-meta">
+                <span id="salesAgentBadge" class="badge"></span>
+                <span id="salesCasesBadge" class="badge badge-soft"></span>
+              </div>
+            </div>
+
+            <div id="salesKpiGrid" class="kpi-grid"></div>
+
+            <div class="module-grid">
+              <article class="card">
+                <div class="card-head">
+                  <div>
+                    <h3>My Target Progress</h3>
+                    <p class="subtle-text">Monthly target, achieved amount, and remaining gap.</p>
+                  </div>
+                </div>
+                <div id="salesTargetGrid" class="result-grid"></div>
+              </article>
+
+              <article class="card">
+                <div class="card-head">
+                  <div>
+                    <h3>My Urgent Cases</h3>
+                    <p class="subtle-text">Cases ageing more than 7 days and needing immediate action.</p>
+                  </div>
+                </div>
+                <div class="table-wrap premium-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Customer Name</th>
+                        <th>Company</th>
+                        <th class="number">Finance Amount</th>
+                        <th>Current Stage</th>
+                        <th class="number">Ageing Days</th>
+                      </tr>
+                    </thead>
+                    <tbody id="salesUrgentBody"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>My Pipeline Cases</h3>
+                  <p class="subtle-text">Only your pending and active cases, filtered automatically by your login.</p>
+                </div>
+              </div>
+
+              <div class="table-wrap premium-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Customer Name</th>
+                      <th>Company</th>
+                      <th class="number">Finance Amount</th>
+                      <th>Current Stage</th>
+                      <th class="number">Ageing Days</th>
+                      <th>Follow-up Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="salesPipelineBody"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Leaderboard</h3>
+                  <p class="subtle-text">Rank view only with booked value and conversion percentage.</p>
+                </div>
+              </div>
+
+              <div class="table-wrap premium-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Agent Name</th>
+                      <th class="number">Booked Value</th>
+                      <th class="number">Conversion %</th>
+                    </tr>
+                  </thead>
+                  <tbody id="salesLeaderboardBody"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mis-upload">
+          <div class="module-grid upload-grid">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>MIS Upload</h3>
+                  <p class="subtle-text">Import MIS and Staff Tracker sheets without changing source data.</p>
+                </div>
+              </div>
+
+              <div id="uploadDropzone" class="upload-box">
+                <label class="upload-button">
+                  <div class="upload-visual" aria-hidden="true">
+                    <span class="upload-cloud"></span>
+                  </div>
+                  <span>Select Excel File</span>
+                  <small>Drag and drop here, or browse to upload your workbook.</small>
+                  <input id="misUpload" type="file" accept=".xlsx,.xls" />
+                </label>
+
+                <div class="upload-status-block">
+                  <p id="uploadStatus" class="subtle-text">
+                    Expected sheets: <code>MIS</code>, <code>Staff Tracker</code>
+                  </p>
+                  <p id="mappingMeta" class="subtle-text"></p>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>MIS Preview</h3>
+                  <p class="subtle-text">Latest imported rows from the active workbook.</p>
+                </div>
+              </div>
+
+              <div class="table-wrap premium-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>App ID</th>
+                      <th>Agent</th>
+                      <th>Customer</th>
+                      <th>Company</th>
+                      <th>Stage</th>
+                      <th class="number">Finance Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="previewBody"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="submissions">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Submissions</h3>
+                <p class="subtle-text">Monitor all visible MIS records with submission, booked, and conversion context.</p>
+              </div>
+            </div>
+
+            <div id="submissionMiniStats" class="mini-stats"></div>
+
+            <div class="table-wrap premium-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>App ID</th>
+                    <th>Agent</th>
+                    <th>Customer</th>
+                    <th>Company</th>
+                    <th>Stage</th>
+                    <th class="number">Finance Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="submissionTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="dbr-dsr">
+          <div class="module-grid">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>DBR / DSR Calculator</h3>
+                  <p class="subtle-text">Affordability assessment with 5% credit card limit liability included.</p>
+                </div>
+              </div>
+
+              <form id="dsrForm" class="form-grid">
+                <label class="field">
+                  <span>Monthly Salary</span>
+                  <input name="salary" type="number" min="0" step="0.01" value="25000" />
+                </label>
+                <label class="field">
+                  <span>Other Income</span>
+                  <input name="otherIncome" type="number" min="0" step="0.01" value="0" />
+                </label>
+                <label class="field">
+                  <span>Existing EMI</span>
+                  <input name="existingEmi" type="number" min="0" step="0.01" value="3200" />
+                </label>
+                <label class="field">
+                  <span>Housing / Rent</span>
+                  <input name="rent" type="number" min="0" step="0.01" value="4500" />
+                </label>
+                <label class="field">
+                  <span>Credit Card Total Limits</span>
+                  <input name="cardLimit" type="number" min="0" step="0.01" value="50000" />
+                </label>
+                <label class="field">
+                  <span>Other Obligations</span>
+                  <input name="otherObligations" type="number" min="0" step="0.01" value="0" />
+                </label>
+                <label class="field">
+                  <span>Policy Cap %</span>
+                  <input name="policyCap" type="number" min="1" max="100" step="1" value="50" />
+                </label>
+              </form>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>DSR Output</h3>
+                  <p class="subtle-text">Decision-ready summary for eligibility review.</p>
+                </div>
+              </div>
+              <div id="dsrResult" class="result-grid"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="emi">
+          <div class="module-grid">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>EMI Calculator</h3>
+                  <p class="subtle-text">Generate installment values and full tenor amortization instantly.</p>
+                </div>
+              </div>
+
+              <form id="emiForm" class="form-grid">
+                <label class="field">
+                  <span>Finance Amount</span>
+                  <input name="principal" type="number" min="0" step="0.01" value="150000" />
+                </label>
+                <label class="field">
+                  <span>Annual Rate %</span>
+                  <input name="annualRate" type="number" min="0" step="0.01" value="6.99" />
+                </label>
+                <label class="field">
+                  <span>Tenure (Months)</span>
+                  <input name="tenureMonths" type="number" min="1" step="1" value="48" />
+                </label>
+                <label class="field">
+                  <span>Start Date</span>
+                  <input id="emiStartDate" name="startDate" type="date" />
+                </label>
+              </form>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>EMI Summary</h3>
+                  <p class="subtle-text">Monthly installment, payable value, and maturity snapshot.</p>
+                </div>
+              </div>
+              <div id="emiSummary" class="result-grid"></div>
+            </article>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>EMI Schedule</h3>
+                <p class="subtle-text">Detailed amortization schedule for the selected tenor.</p>
+              </div>
+            </div>
+
+            <div class="table-wrap premium-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Due Date</th>
+                    <th class="number">EMI</th>
+                    <th class="number">Principal</th>
+                    <th class="number">Profit</th>
+                    <th class="number">Balance</th>
+                  </tr>
+                </thead>
+                <tbody id="emiTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="proposal">
+          <div class="module-grid">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Proposal Generator</h3>
+                  <p class="subtle-text">Prepare a customer-ready financing proposal with a clean premium presentation.</p>
+                </div>
+              </div>
+
+              <form id="proposalForm" class="form-grid">
+                <label class="field">
+                  <span>Customer Name</span>
+                  <input name="customerName" type="text" value="Ayman Al Mansoori" />
+                </label>
+                <label class="field">
+                  <span>Customer ID / App ID</span>
+                  <input name="appId" type="text" value="PF-2026-001" />
+                </label>
+                <label class="field">
+                  <span>Agent Contact</span>
+                  <input name="agentContact" type="text" value="Omar Ali | 050 000 0000" />
+                </label>
+                <label class="field">
+                  <span>Company</span>
+                  <input name="company" type="text" value="Listed A" />
+                </label>
+                <label class="field">
+                  <span>Finance Amount</span>
+                  <input name="financeAmount" type="number" min="0" step="0.01" value="150000" />
+                </label>
+                <label class="field">
+                  <span>Tenure (Months)</span>
+                  <input name="tenure" type="number" min="1" step="1" value="48" />
+                </label>
+                <label class="field">
+                  <span>Rate %</span>
+                  <input name="rate" type="number" min="0" step="0.01" value="6.99" />
+                </label>
+                <label class="field span-two">
+                  <span>Benefits</span>
+                  <textarea name="benefits" rows="3">Competitive profit rate, flexible tenor, and professional sales support through Derby - DIB Sales Portal.</textarea>
+                </label>
+                <label class="field span-two">
+                  <span>Notes</span>
+                  <textarea name="notes" rows="4">Prepared for discussion purposes only. Final approval remains subject to policy, credit assessment, and supporting documents.</textarea>
+                </label>
+              </form>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Proposal Preview</h3>
+                  <p class="subtle-text">Structured, premium proposal view ready for customer-facing PDF generation.</p>
+                </div>
+              </div>
+
+              <div class="proposal-preview-shell">
+                <div class="proposal-preview-header">
+                  <div>
+                    <p class="proposal-brand">Derby - DIB Sales Portal</p>
+                    <strong>Personal Finance Sales Management System</strong>
+                  </div>
+                  <span class="proposal-pill">Client Proposal</span>
+                </div>
+                <div id="proposalPreview" class="result-grid proposal-preview-grid"></div>
+              </div>
+
+              <div class="button-row">
+                <button id="generatePdfButton" class="button button-primary" type="button">Generate PDF</button>
+                <button id="downloadPdfButton" class="button button-secondary" type="button">Download PDF</button>
+              </div>
+              <p id="proposalStatus" class="subtle-text"></p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="company-listing">
+          <div class="module-grid">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Company Listing</h3>
+                  <p class="subtle-text">Track employer listing status with clean internal register controls.</p>
+                </div>
+              </div>
+
+              <form id="companyForm" class="form-grid">
+                <label class="field">
+                  <span>Company</span>
+                  <input name="company" type="text" placeholder="Company name" />
+                </label>
+                <label class="field">
+                  <span>Status</span>
+                  <select name="status">
+                    <option>New</option>
+                    <option>Documents Pending</option>
+                    <option>Under Review</option>
+                    <option>Listed</option>
+                    <option>Rejected</option>
+                  </select>
+                </label>
+                <label class="field span-two">
+                  <span>Notes</span>
+                  <input name="notes" type="text" placeholder="Notes" />
+                </label>
+                <div class="button-row span-two">
+                  <button class="button button-primary" type="submit">Add Company</button>
+                </div>
+              </form>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Listing Register</h3>
+                  <p class="subtle-text">Current tracked companies and listing status notes.</p>
+                </div>
+              </div>
+              <div id="companyList" class="simple-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="follow-up">
+          <div class="module-grid">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Follow-up Tracker</h3>
+                  <p class="subtle-text">Manage daily case actions for processing, documentation, and release steps.</p>
+                </div>
+              </div>
+
+              <form id="followUpForm" class="form-grid">
+                <label class="field">
+                  <span>App ID</span>
+                  <input name="appId" type="text" placeholder="App ID" />
+                </label>
+                <label class="field">
+                  <span>Customer</span>
+                  <input name="customer" type="text" placeholder="Customer name" />
+                </label>
+                <label class="field">
+                  <span>Stage</span>
+                  <input name="stage" type="text" placeholder="Next stage" />
+                </label>
+                <label class="field span-two">
+                  <span>Notes</span>
+                  <input name="notes" type="text" placeholder="Notes" />
+                </label>
+                <div class="button-row span-two">
+                  <button class="button button-primary" type="submit">Add Follow-up</button>
+                </div>
+              </form>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3>Open Follow-ups</h3>
+                  <p class="subtle-text">Operational follow-up list for the current sales cycle.</p>
+                </div>
+              </div>
+              <div id="followUpList" class="simple-list"></div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
